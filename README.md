@@ -1,112 +1,131 @@
-# Project: Automated Task and Test Case Generation with Gemini API and Jira Integration
+## Project: Automated Task and Test Case Generation with Gemini API and Jira Integration
 
-## Overview
-This project demonstrates an end-to-end automation pipeline implemented in a single Python script, `flight_tracking_application_honeywell.py`. A manager assigns a high-level development requirement, and two AI-driven agents (powered by the Gemini API) handle:
+This project demonstrates an end-to-end automation pipeline implemented in a single Python script, `jira-autonomous.py`. A manager assigns a high-level development requirement, and two AI-driven agents (powered by the Gemini API) handle:
 
-1. **Requirement Agent**: Analyzes the requirement, generates 3–5 high-level development subtasks, and creates corresponding Jira tickets.
-2. **Test Agent**: For each development subtask, generates 3–5 comprehensive test cases and adds them as Jira subtasks.
+1. **Requirement Agent**: Analyzes the requirement, generates 3–5 high-level development subtasks using `generate_development_tasks()`, and creates corresponding Jira tickets via `create_jira_ticket()`.
+2. **Test Agent**: For each development subtask, generates 3–5 comprehensive test cases using `generate_and_create_test_cases()`, and adds them as Jira subtasks via `create_jira_subtask()`.
 
 Automating subtask and test case creation accelerates sprint planning, ensures consistency, and reduces manual overhead.
 
 ## File Structure
 
-- **`flight_tracking_application_honeywell.py`**: Contains all functionality:
-  - Manager input handling
-  - Requirement agent prompt construction and AI calls
-  - Test agent prompt construction and AI calls
-  - JSON parsing of AI responses
-  - Jira API integration for creating subtasks and test-case subtasks
-  - Utility functions for logging and error handling
+* \`\`: Contains all functionality:
 
-## Code Overview
-
-### Manager Flow
-- The manager provides a requirement and a unique `task_id`.
-- The script invokes the requirement agent to generate subtasks.
-
-### Requirement Agent
-1. **Prompt Construction**: Builds an instruction template with the requirement text.
-2. **AI Call**: Sends the prompt to the Gemini API via `request_ai_completion()`.
-3. **Response Parsing**: Extracts a JSON array of subtasks from the AI response.
-4. **Jira Subtask Creation**: Calls `add_subtask()` to create each subtask in Jira.
-
-### Test Agent
-1. **Prompt Construction**: Builds a test-case-generation instruction for each subtask.
-2. **AI Call**: Sends the test prompt to Gemini API.
-3. **Response Parsing**: Extracts JSON array of test cases.
-4. **Jira Subtask Creation**: Adds each test case as a subtask under its parent development subtask.
+  * Manager input handling
+  * Requirement agent prompt construction and AI calls via `generate_content_with_fallback()`
+  * Test agent prompt construction and AI calls via `generate_content_with_fallback()`
+  * JSON parsing of AI responses within `generate_development_tasks()` and `generate_and_create_test_cases()`
+  * Jira API integration for creating tickets (`create_jira_ticket()`) and subtasks (`create_jira_subtask()`)
+  * Utility functions for logging, error handling, key rotation, and issue linking
 
 ## Dependencies
-- Python 3.9+
-- `requests` for HTTP calls
-- `json` for parsing AI responses
-- Gemini API client (internal)
-- Jira REST API credentials (URL, API token, user email)
 
-**Setup Instructions:**
+* Python 3.9+
+* `requests` for HTTP calls
+* `json` for parsing AI responses
+* `time` for delay management
+* `google.generativeai` (`genai`) as Gemini API client
+* `python-dotenv` for environment variable loading
 
-1.  **Replace with Your Email ID:**
-    Update the `EMAIL` constant in the code with the email address associated with your Jira account:
+## Setup Instructions
 
-    ```python
-    EMAIL = "your-email@example.com"  # Replace with your own email
-    ```
+1. **Configure Environment Variables**:
 
-2.  **Generate Jira API Token:**
-    Generate an API token for Jira authentication by visiting the following link:
-    [Generate API Token]([invalid URL removed])
-    Replace the `API_TOKEN` constant in the code with the generated token:
+   * Create a `.env` file in the project root with the following keys:
 
-    ```python
-    API_TOKEN = "your-generated-api-token"  # Replace with your generated API token
-    ```
+     ```bash
+     JIRA_EMAIL=your-email@example.com
+     JIRA_API_TOKEN=your-jira-api-token
+     JIRA_BASE_URL=https://your-domain.atlassian.net
+     GEMINI_API_KEY1=your-first-gemini-key
+     GEMINI_API_KEY2=your-second-gemini-key
+     ```
 
-3.  **Set Up Your Jira Base URL:**
-    Create a project on Jira and navigate to your Jira board. Identify your Jira domain (workspace) and update the `JIRA_BASE_URL` constant. The base URL follows the format `https://your-domain.atlassian.net`. Replace `your-domain` with your actual Jira workspace name.
+2. **Install Dependencies**:
 
-    For example, if your workspace name is `exampleworkspace`, it should be:
+   ```bash
+   pip install requests google-generativeai python-dotenv
+   ```
 
-    ```python
-    JIRA_BASE_URL = "[https://exampleworkspace.atlassian.net](https://exampleworkspace.atlassian.net)"
-    ```
+3. **Verify Project Key**:
 
-4.  **Verify and Update Your Project Key:**
-    On your Jira board, create a test ticket to verify your project key. The project key is the prefix found in your issue keys (e.g., CPG, FTS, FT). Update the `PROJECT_KEY` constant in the code accordingly:
+   * On your Jira board, note your project key (e.g., `CPG`). Update the `PROJECT_KEY` constant in the script if needed.
 
-    ```python
-    PROJECT_KEY = "YOUR_PROJECT_KEY"  # Replace with your actual project key (e.g., CPG, FTS, FT, etc.)
-    ```
+4. **(Optional) Update Assignee Account ID**:
 
-5.  **(Optional) Update Gemini API Keys:**
-    The code includes default Gemini API keys in the `gemini_keys` list. These should function as provided. However, if you wish to generate new keys, you can do so by visiting:
-    [Generate Gemini API Key]([invalid URL removed])
-    If you generate your own API keys, update the `gemini_keys` list in the code:
-
-    ```python
-    gemini_keys = ['your-first-gemini-api-key', 'your-second-gemini-api-key']
-    ```
+   * In `create_jira_ticket()` and `create_jira_subtask()`, replace `assignee` ID with your Jira `accountId` if the default placeholder needs updating.
 
 ## Usage
-1. **Assign a Requirement**:
+
+1. **Run the script with a main requirement**:
+
    ```bash
-   python flight_tracking_application_honeywell.py --task "Implement user authentication flow"
+   python jira-autonomous.py
    ```
-2. **Review Created Subtasks** in Jira.
-3. **Run Test Agent** (automatically triggered after subtasks creation or manually):
-   ```bash
-   python flight_tracking_application_honeywell.py --parent-task TASK-1234 --run-tests
-   ```
-4. **Verify Test Case Subtasks** in Jira.
+
+   * Enter the requirement when prompted.
+
+2. **Review Tickets**:
+
+   * A parent ticket is created using `create_jira_ticket()`.
+   * Development subtasks are generated by `generate_development_tasks()` and created via `create_jira_ticket()` linked to the parent.
+   * Test cases are generated by `generate_and_create_test_cases()` and created via `create_jira_subtask()` under each development subtask.
+
+3. **Fetch and Display**:
+
+   * Finally, `fetch_visible_tickets()` retrieves and prints all visible tickets (excluding sample tickets).
+
+## Core Functions
+
+* `generate_content_with_fallback(prompt: str) -> str`:
+
+  * Invokes Gemini API calls with key rotation and retry logic.
+
+* `generate_development_tasks(requirement: str) -> list`:
+
+  * Constructs a prompt to generate 3–5 subtasks.
+  * Parses JSON response into a list of task objects.
+
+* `create_jira_ticket(summary: str, description: str) -> str`:
+
+  * Creates a Jira Task and returns the issue key.
+
+* `create_jira_subtask(parent_key: str, summary: str, description: str) -> str`:
+
+  * Creates a Jira Subtask under the given parent issue.
+
+* `fetch_visible_tickets() -> list`:
+
+  * Retrieves existing project tickets (excluding sample ones) via Jira Search API.
+
+* `get_link_types() -> list`:
+
+  * Fetches available Jira issue link types.
+
+* `link_issues(outward_issue: str, inward_issue: str, link_type: str = "Relates") -> bool`:
+
+  * Links two Jira issues with the specified relationship.
+
+* `create_linked_subtasks(parent_key: str, subtasks: list) -> (list, dict)`:
+
+  * Creates Jira tickets for each generated subtask and links them to the parent.
+
+* `generate_and_create_test_cases(task_description: str, task_key: str) -> list`:
+
+  * Generates 3–5 test cases, parses JSON, and creates them as Jira subtasks.
 
 ## Error Handling
-- **JSON Parsing Errors**: Logged with raw AI output for debugging.
-- **Jira API Failures**: Retries up to 3 times, then logs and skips.
-- **Gemini API Errors**: Logged with status codes and messages.
+
+* JSON parsing within generators logs raw output on failure.
+* Jira API calls retry up to 3 times before logging errors.
+* Gemini API key fallback handles rate limits and quota issues.
 
 ## Extensibility
-- **Additional Agents**: Extend the script with more AI agents for documentation, code review, or deployment.
-- **Custom Prompts**: Modify the prompt templates in the script for different task structures.
+
+* Add more AI agents (e.g., for documentation or deployment) by creating new prompt functions.
+* Customize prompts in `generate_development_tasks()` and `generate_and_create_test_cases()` to adjust output format.
+* Integrate additional Jira interactions (e.g., transitions, comments) by adding new helper functions.
 
 ## License
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
