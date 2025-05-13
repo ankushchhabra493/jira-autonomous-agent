@@ -9,7 +9,7 @@ Automating subtask and test case creation accelerates sprint planning, ensures c
 
 ## File Structure
 
-* \`\`: Contains all functionality:
+* Contains all functionality:
 
   * Manager input handling
   * Requirement agent prompt construction and AI calls via `generate_content_with_fallback()`
@@ -125,7 +125,3 @@ Automating subtask and test case creation accelerates sprint planning, ensures c
 * Add more AI agents (e.g., for documentation or deployment) by creating new prompt functions.
 * Customize prompts in `generate_development_tasks()` and `generate_and_create_test_cases()` to adjust output format.
 * Integrate additional Jira interactions (e.g., transitions, comments) by adding new helper functions.
-
-## License
-
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
